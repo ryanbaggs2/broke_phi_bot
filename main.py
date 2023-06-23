@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 import requests
 import json
+import re
 
 # Login token.
 TOKEN = os.getenv('BROKE_PHI_BOT_TOKEN')
@@ -38,20 +39,28 @@ async def info(ctx, cmd ='info'):
     Example: $command \"Why do I like Dead by Daylight?\"
     \nThe command $list gives a list of all commands.''')
 
+# Sets a notification for when a game reaches a specific price point.
 @bot.command()
-async def sale(ctx, game):
+async def notify(ctx, game_name):
     apps = content['applist']
 
-    found = False
+    results = search(game_name, apps)
+
+    for result in results:
+        name = result['name']
+        print(f'{name}')
+
+# Searches for the game in the list of apps using regular expressions.
+def search(game_name, apps):
+    pattern = re.compile(re.escape(game_name), re.IGNORECASE)
+
+    results = []
     for app in apps['apps']:
-        if app['name'] == game:
-            found = True
-            break;
- 
-    if found:
-        await ctx.send(f'Found {game}')
-    else:
-        await ctx.send(f'Did not find {game}')
+        name = app['name']
+        if re.search(pattern, name):
+            results.append(app)
+
+    return results
 
 # Run the bot with login token.
 bot.run(TOKEN)
