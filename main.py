@@ -41,16 +41,18 @@ async def info(ctx, cmd ='info'):
 
 # Sets a notification for when a game reaches a specific price point.
 @bot.command()
-async def notify(ctx, game_name):
+async def notify(ctx, game_name, price):
     apps = content['applist']
 
     results = search(game_name, apps)
+    
+    game_info = await verify_result(ctx, results)
 
-    for result in results:
-        name = result['name']
-        print(f'{name}')
+    result_name = game_info['name']
 
-# Searches for the game in the list of apps using regular expressions.
+    print(f'{result_name}')
+
+# Searches for possible matches in the list of apps using regular expressions.
 def search(game_name, apps):
     pattern = re.compile(re.escape(game_name), re.IGNORECASE)
 
@@ -61,6 +63,25 @@ def search(game_name, apps):
             results.append(app)
 
     return results
+
+# Get the user requested result.
+async def verify_result(ctx, results):
+    if len(results) == 0:
+        return None
+    if len(results) == 1:
+        return results[0]
+    
+    await ctx.send('''Multiple matches, enter the number that matches 
+    \nthe game you\'re looking for''')
+
+    for index, result in enumerate(results, start=1):
+        name = result['name']
+        if index <= 5:
+            await ctx.send(f'{index}. {name}')
+
+    msg = await bot.wait_for('message', check=lambda message: message.author == ctx.author)
+
+    return results[int(msg.content) - 1]
 
 # Run the bot with login token.
 bot.run(TOKEN)
